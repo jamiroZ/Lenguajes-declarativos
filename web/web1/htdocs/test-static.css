@@ -1,0 +1,13 @@
+body {
+    background-color: #f0f0f0;
+    font-family: Arial;
+}
+
+h1 {
+    color: blue;
+}
+
+.hot {
+    color: red;
+    font-weight: bold;
+}
