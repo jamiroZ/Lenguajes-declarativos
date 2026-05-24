@@ -1,0 +1,14 @@
+funcionamiento:
+el navegador ejecuta Prolog,
+JavaScript consulta a Prolog,
+Prolog decide el resultado.
+
+
+flujo:
+
+1.terminal
+2.python -m http.server 8000
+3.http://localhost:8000 en el navegador
+
+internamente:
+index.html -carga-> swipl-web.js -carga->swipl-web.wasm- ejecuta- game.pl 

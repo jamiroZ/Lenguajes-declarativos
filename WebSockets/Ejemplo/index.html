@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Piedra Papel Tijera</title>
+</head>
+
+<body>
+
+    <h1>Piedra Papel Tijera</h1>
+
+    <label>Nombre:</label>
+    <input type="text" id="nombre">
+
+    <br><br>
+
+    <label>Jugada:</label>
+
+    <select id="jugada">
+        <option value="piedra">Piedra</option>
+        <option value="papel">Papel</option>
+        <option value="tijera">Tijera</option>
+    </select>
+
+    <br><br>
+
+    <button onclick="jugar()">
+        Jugar
+    </button>
+
+    <h2 id="resultado"></h2>
+
+    <script>
+
+        function jugar() {
+
+            const nombre =
+                document.getElementById("nombre").value;
+
+            const jugada =
+                document.getElementById("jugada").value;
+
+            const socket =
+                new WebSocket("ws://localhost:8080/ws");
+
+            socket.onopen = () => {
+
+                const mensaje =
+                    nombre + "," + jugada;
+
+                socket.send(mensaje);
+            };
+
+            socket.onmessage = (event) => {
+
+                document.getElementById("resultado")
+                    .innerHTML = event.data;
+            };
+
+            socket.onerror = () => {
+
+                document.getElementById("resultado")
+                    .innerHTML = "Error de conexión";
+            };
+        }
+
+    </script>
+
+</body>
+
+</html>

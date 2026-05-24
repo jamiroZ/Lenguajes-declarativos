@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test SWI</title>
+</head>
+
+<body>
+
+<h1>Test WASM</h1>
+
+<script src="swipl-web.js"></script>
+
+<script>
+
+console.log(typeof SWIPL);
+
+SWIPL().then((module) => {
+
+    console.log("WASM cargado");
+
+    console.log(module);
+
+});
+
+</script>
+
+</body>
+</html>

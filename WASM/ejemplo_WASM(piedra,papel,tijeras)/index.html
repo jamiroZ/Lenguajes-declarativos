@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>TP2</title>
+</head>
+
+<body>
+
+<h1>Piedra Papel Tijera</h1>
+
+<button onclick="jugar('piedra')">
+    Piedra
+</button>
+
+<button onclick="jugar('papel')">
+    Papel
+</button>
+
+<button onclick="jugar('tijera')">
+    Tijera
+</button>
+
+<h2 id="resultado"></h2>
+
+<script>
+
+function jugar(jugador) {
+
+    const opciones = [
+        "piedra",
+        "papel",
+        "tijera"
+    ];
+
+    const pc =
+        opciones[
+            Math.floor(Math.random() * 3)
+        ];
+
+    let resultado;
+
+    if (jugador === pc) {
+
+        resultado = "empate";
+
+    } else if (
+        (jugador === "piedra" && pc === "tijera") ||
+        (jugador === "papel" && pc === "piedra") ||
+        (jugador === "tijera" && pc === "papel")
+    ) {
+
+        resultado = "gana_j1";
+
+    } else {
+
+        resultado = "gana_j2";
+    }
+
+    document.getElementById("resultado")
+        .innerText =
+        `Jugador: ${jugador}
+         | PC: ${pc}
+         | Resultado: ${resultado}`;
+}
+
+</script>
+
+</body>
+</html>

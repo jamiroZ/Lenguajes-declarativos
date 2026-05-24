@@ -1,0 +1,12 @@
+index.html
+    ↓
+carga swipl-web.js
+    ↓
+swipl-web.js carga swipl-web.wasm
+    ↓
+SWIPL() inicia runtime
+    ↓
+JS ejecuta:
+member(X,[1,2,3])
+    ↓
+resultado en consola

@@ -1,0 +1,21 @@
+2 jugadores se conectan y envia una jugada(piedra,papel,tijera) 
+el servidor decide el ganador,responde el resultado a cada jugador
+                ┌─────────────────┐
+                │ Servidor Prolog │
+                │ lógica del juego│
+                └─────────────────┘
+                     ▲       ▲
+                     │       │
+              websocket websocket
+                     │       │
+              ┌─────────┐ ┌─────────┐
+              │Jugador 1│ │Jugador 2│
+              └─────────┘ └─────────┘
+
+ Navegador Web
+   HTML + JS
+        │
+   WebSocket
+        │
+Servidor Prolog
+ lógica del juego

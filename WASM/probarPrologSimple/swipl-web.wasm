@@ -1,0 +1,3 @@
+//binario WebAssembly generado a partir del código Prolog para el juego de piedra, papel o tijeras. Este archivo se puede cargar en un entorno JavaScript para ejecutar la lógica del juego en el navegador.
+swipl-web.js
+swipl-web.wasm

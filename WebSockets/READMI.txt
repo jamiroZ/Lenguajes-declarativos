@@ -1,0 +1,26 @@
++-------------------+
+| Servidor Prolog   |
+| lógica del juego  |
++-------------------+
+      /      \
+     /        \
+WebSocket   WebSocket
+   /            \
++--------+   +--------+
+|Jugador1|   |Jugador2|
++--------+   +--------+
+websocket es un protocolo que  es una arquitectura cliente-servidor:
+un proceso actua como servidor del juego
+cada jugador es un proceso separado, y se realiza la comunicacion 
+por WebSockets
+
+librerias necesarias en SWI-Prolog:
+para crear el servidor HTTP:
+:- use_module(library(http/thread_httpd)).
+manejar rutas:
+:- use_module(library(http/http_dispatch)).
+soporte websocket:
+:- use_module(library(http/websocket)).
+manejo de msjs JSON:
+:- use_module(library(http/json)).
+

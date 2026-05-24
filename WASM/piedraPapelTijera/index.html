@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Piedra Papel Tijera</title>
+</head>
+
+<body>
+
+<h1>Piedra Papel Tijera</h1>
+
+<button onclick="jugar('piedra')">
+    Piedra
+</button>
+
+<button onclick="jugar('papel')">
+    Papel
+</button>
+
+<button onclick="jugar('tijera')">
+    Tijera
+</button>
+
+<h2 id="resultado"></h2>
+
+<!-- -->
+<script src="./node_modules/swipl-wasm/dist/swipl/swipl-web.js"></script>
+
+<script>
+
+let Prolog;
+
+SWIPL().then(async (module) => {
+
+    console.log("WASM cargado");
+
+    Prolog = module.prolog;
+
+    await Prolog.consult("game.pl");
+
+    console.log("game.pl cargado");
+
+}).catch((error) => {
+
+    console.error(error);
+
+});
+
+async function jugar(jugador) {
+
+    if (!Prolog) {
+
+        alert("Prolog todavía está cargando");
+
+        return;
+    }
+
+    const opciones = [
+        "piedra",
+        "papel",
+        "tijera"
+    ];
+
+    const pc =
+        opciones[
+            Math.floor(Math.random() * 3)
+        ];
+
+    const queryString =
+        `jugar(${jugador}, ${pc}, R).`;
+
+    console.log(queryString);
+
+    try {
+
+        const query =
+            Prolog.query(queryString);
+
+        const result =
+            await query.next();
+
+        console.log(result);
+
+        let texto = "";
+
+        if(result.done) {
+
+            texto = "Sin resultado";
+
+        } else {
+
+            texto =
+                result.value.R;
+        }
+
+        document
+            .getElementById("resultado")
+            .innerText =
+            `Jugador: ${jugador}
+                PC: ${pc}
+                Resultado: ${texto}`;
+
+        query.close();
+
+    } catch(error) {
+
+        console.error(error);
+
+    }
+}
+
+</script>
+
+</body>
+</html>
