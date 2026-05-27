@@ -36,18 +36,22 @@ crear_mazo(Mazo) :-
     findall(carta(N, P), (numero(N), palo(P)), Mazo).
 
 repartir(Mazo, CartasJ1, CartasJ2) :-
-    random_permutation(Mazo, MazoMezclado),
-    length(CartasJ1, 3),
-    length(CartasJ2, 3),
-    append(CartasJ1, CartasJ2, SeisCartas),
-    append(SeisCartas, _, MazoMezclado).
+    random_permutation(Mazo, Mezclado),
+    Mezclado = [
+        C1,C2,C3,
+        C4,C5,C6 | _
+    ],
+    CartasJ1 = [C1,C2,C3],
+    CartasJ2 = [C4,C5,C6].
 
 % --- 3. BUCLE PRINCIPAL DEL JUEGO ---
 iniciar :-
+    writeln("ARRANCO iniciar"),
     enviar_evento(
         todos,
         inicio_partida
     ),
+    writeln("ANTES DE jugar"),
     jugar(0, 0, jugador1).
 
 jugar(Pts1, Pts2, _) :-
@@ -55,21 +59,29 @@ jugar(Pts1, Pts2, _) :-
     ;   Pts2>=15
     ),
     !,
+    (   Pts1 >= 15
+    ->  GanadorFinal = jugador1
+    ;   GanadorFinal = jugador2
+    ),
     enviar_evento(
-    todos,
-    partida_terminada(Ganador, Pts1, Pts2)
-).
+        todos,
+        partida_terminada(GanadorFinal, Pts1, Pts2)
+    ).
+
 
 jugar(Pts1, Pts2, ManoActual) :-
+    format("Entrando a jugar/3~n", []),
     crear_mazo(Mazo),
     repartir(Mazo, CartasJ1, CartasJ2),
+    writeln("REPARTIO"),
     enviar_evento(
         todos,
         estado_mano(ManoActual, Pts1, Pts2)
     ),
+    writeln("MANDANDO EVENTOS"),
     enviar_cartas(jugador1, CartasJ1),
     enviar_cartas(jugador2, CartasJ2),
-    
+    writeln("ARRANCA MANO"),
     % Iniciar la secuencia de la mano (3 rondas max)
     (   ManoActual==jugador1
     ->  mano_logica(jugador1, jugador2, CartasJ1, CartasJ2, nada, GanadorMano, EstadoFinalApuesta)
@@ -104,15 +116,28 @@ fase_apuesta(nada, PTurno, PRival, EstFin, Result) :-
         PTurno,
         Canto
     ),  
-    (   Canto==nada
-    ->  EstFin=nada,
-        Result=continuar
-    ;   Canto==truco
-    ->  responder_apuesta(truco(PTurno), PRival, PTurno, EstFin, Result)
-    ).
+    (
+    Canto == nada
+    ->
+    EstFin = nada,
+    Result = continuar
+    ;
+    Canto == truco
+    ->
+    responder_apuesta(
+        truco(PTurno),
+        PRival,
+        PTurno,
+        EstFin,
+        Result
+    )
+    ;
+    EstFin = nada,
+    Result = continuar
+).
 
 fase_apuesta(truco(Dueno), PTurno, PRival, EstFin, Result) :-
-    PTurno\==Dueno,
+    PTurno \== Dueno,
     !,
     enviar_evento(
         todos,
@@ -122,11 +147,24 @@ fase_apuesta(truco(Dueno), PTurno, PRival, EstFin, Result) :-
         PTurno,
         Canto
     ),
-    (   Canto==nada
-    ->  EstFin=truco(Dueno),
-        Result=continuar
-    ;   Canto==retruco
-    ->  responder_apuesta(retruco(PTurno), PRival, PTurno, EstFin, Result)
+    (
+        Canto == nada
+        ->
+        EstFin = truco(Dueno),
+        Result = continuar
+        ;
+        Canto == retruco
+        ->
+        responder_apuesta(
+            retruco(PTurno),
+            PRival,
+            PTurno,
+            EstFin,
+            Result
+        )
+        ;
+        EstFin = truco(Dueno),
+        Result = continuar
     ).
 
 fase_apuesta(retruco(Dueno), PTurno, PRival, EstFin, Result) :-
@@ -140,14 +178,31 @@ fase_apuesta(retruco(Dueno), PTurno, PRival, EstFin, Result) :-
         PTurno,
         Canto
     ),
-    (   Canto==nada
-    ->  EstFin=retruco(Dueno),
-        Result=continuar
-    ;   Canto==vale4
-    ->  responder_apuesta(vale4(PTurno), PRival, PTurno, EstFin, Result)
-    ).
+    (
+    Canto == nada
+    ->
+    EstFin = retruco(Dueno),
+    Result = continuar
 
-fase_apuesta(EstadoActual, _, _, EstadoActual, continuar).
+    ;
+
+    Canto == vale4
+    ->
+    responder_apuesta(
+        vale4(PTurno),
+        PRival,
+        PTurno,
+        EstFin,
+        Result
+    )
+
+    ;
+
+    EstFin = retruco(Dueno),
+    Result = continuar
+).
+
+fase_apuesta(EstadoActual, _, _, EstadoActual, continuar) :-!.
 
 responder_apuesta(truco(PProp), PResp, PProp, EstFin, Result) :-
     enviar_evento(
@@ -189,21 +244,34 @@ responder_apuesta(retruco(PProp), PResp, PProp, EstFin, Result) :-
     ).
 
 responder_apuesta(vale4(PProp), PResp, PProp, EstFin, Result) :-
+
     enviar_evento(
         todos,
-        responder_truco(PResp, [quiero,retruco,no])
+        responder_vale4(PResp, [quiero,no])
     ),
 
     obtener_accion(
         PResp,
         Respuesta
     ),
-    (   Respuesta==no
-    ->  EstFin=retruco(PResp),
-        Result=fin(PProp)
-    ;   Respuesta==quiero
-    ->  EstFin=vale4(PProp),
-        Result=continuar
+
+    (
+        Respuesta == no
+        ->
+        EstFin = retruco(PResp),
+        Result = fin(PProp)
+
+        ;
+
+        Respuesta == quiero
+        ->
+        EstFin = vale4(PProp),
+        Result = continuar
+
+        ;
+
+        EstFin = retruco(PResp),
+        Result = fin(PProp)
     ).
 
 calcular_puntos(nada, 1).
@@ -337,13 +405,27 @@ pedir_carta(Jugador, Cartas, CartaSeleccionada, CartasRestantes, Abandono) :-
         Jugador,
         Input
     ),
-    (   Input==no
-    ->  Abandono=true,
-        CartaSeleccionada=nula,
-        CartasRestantes=Cartas
-    ;   nth1(Input, Cartas, CartaSeleccionada),
-        select(CartaSeleccionada, Cartas, CartasRestantes),
-        Abandono=false
+    (
+        Input == no
+        ->
+        Abandono = true,
+        CartaSeleccionada = nula,
+        CartasRestantes = Cartas
+
+        ;
+        integer(Input),
+        nth1(Input, Cartas, CartaSeleccionada)
+        ->
+        select(
+            CartaSeleccionada,
+            Cartas,
+            CartasRestantes
+        ),
+        Abandono = false
+        ;
+        Abandono = true,
+        CartaSeleccionada = nula,
+        CartasRestantes = Cartas
     ).
 
 evaluar_tirada(Carta1, Carta2, P1, P2, Ganador) :-
