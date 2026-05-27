@@ -1,0 +1,75 @@
+<!-- ========================================= -->
+<!-- cliente.html -->
+<!-- ========================================= -->
+
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <title>Truco WS</title>
+    </head>
+
+    <body>
+
+        <h1>TRUCO</h1>
+
+        <input id="jugador" placeholder="jugador1 o jugador2">
+
+        <button onclick="conectar()">Conectar</button>
+
+        <hr>
+            <div id="mensajes"></div>
+        <hr>
+
+        <input id="input">
+
+            <button onclick="enviar()">Enviar</button>
+
+        <script>
+
+                let ws;
+
+                function conectar(){
+
+                    const jugador =
+                        document.getElementById("jugador").value;
+
+                    ws = new WebSocket(
+                        "ws://localhost:8080/ws"
+                    );
+
+                    ws.onopen = ()=>{
+
+                        ws.send(JSON.stringify({
+                            jugador: jugador
+                        }));
+
+                    };
+
+                    ws.onmessage = (e)=>{
+
+                        const data = JSON.parse(e.data);
+
+                        const div =
+                            document.getElementById("mensajes");
+
+                        div.innerHTML +=
+                            "<p>"+data.mensaje+"</p>";
+                    };
+                }
+
+                function enviar(){
+
+                    const valor =
+                        document.getElementById("input").value;
+
+                    ws.send(JSON.stringify({
+                        input: valor
+                    }));
+
+                }
+
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Truco Argentino — Red</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --verde:   #1a4a2e;
+    --verde2:  #2d6e47;
+    --oro:     #c8a84b;
+    --oro2:    #e8c96b;
+    --crema:   #f5edd8;
+    --rojo:    #8b1a1a;
+    --azul:    #1a3a5c;
+    --sombra:  rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: radial-gradient(ellipse at 30% 20%, #0e3020 0%, #071a10 60%, #050f08 100%);
+    font-family: 'Crimson Text', serif;
+    color: var(--crema);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Textura de paño */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg,   transparent, transparent 2px, rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px),
+      repeating-linear-gradient(90deg,  transparent, transparent 2px, rgba(0,0,0,.05) 2px, rgba(0,0,0,.05) 4px);
+    pointer-events: none; z-index: 0;
+  }
+
+  #app { position: relative; z-index: 1; }
+
+  /* ─── PANTALLA DE CONEXIÓN ─── */
+  #pantalla-conexion {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; gap: 24px; padding: 20px;
+  }
+
+  .titulo-juego {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    font-weight: 900;
+    color: var(--oro);
+    text-shadow: 0 0 40px rgba(200,168,75,.4), 2px 4px 0 rgba(0,0,0,.8);
+    letter-spacing: .04em;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .titulo-juego span { color: var(--crema); font-style: italic; }
+
+  .subtitulo {
+    font-size: 1.15rem; color: rgba(245,237,216,.6); letter-spacing: .12em;
+    text-transform: uppercase; font-style: italic;
+  }
+
+  .panel-conexion {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(200,168,75,.25);
+    border-radius: 8px;
+    padding: 32px 40px;
+    display: flex; flex-direction: column; gap: 16px;
+    min-width: 340px; backdrop-filter: blur(8px);
+  }
+
+  .panel-conexion label { font-size: 1rem; color: var(--oro2); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+
+  .panel-conexion input {
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(200,168,75,.3);
+    border-radius: 4px;
+    color: var(--crema);
+    font-family: 'Crimson Text', serif;
+    font-size: 1.1rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .panel-conexion input:focus { border-color: var(--oro); }
+
+  .btn {
+    background: linear-gradient(135deg, var(--verde2), var(--verde));
+    border: 1px solid var(--oro);
+    border-radius: 4px;
+    color: var(--oro);
+    cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 12px 28px;
+    text-transform: uppercase;
+    transition: all .2s;
+  }
+  .btn:hover { background: linear-gradient(135deg, #3a8e5c, #2d6e47); color: var(--oro2); transform: translateY(-1px); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  .btn-canto {
+    background: linear-gradient(135deg, #4a2a0e, #2a150a);
+    border-color: var(--oro2); font-size: .9rem; padding: 8px 16px;
+  }
+  .btn-no {
+    background: linear-gradient(135deg, #4a0e0e, #2a0808);
+    border-color: #c86b6b; color: #f0a0a0;
+  }
+  .btn-no:hover { background: linear-gradient(135deg, #6e1414, #3a0e0e); color: #fcc; }
+
+  #status-conexion {
+    font-size: .95rem; color: rgba(245,237,216,.5); text-align: center;
+    min-height: 1.4em; transition: color .3s;
+  }
+  #status-conexion.ok  { color: #6fc98a; }
+  #status-conexion.err { color: #e07070; }
+
+  /* ─── PANTALLA JUEGO ─── */
+  #pantalla-juego { display: none; flex-direction: column; min-height: 100vh; padding: 16px; gap: 16px; }
+
+  .header-juego {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(200,168,75,.2); padding-bottom: 10px;
+  }
+  .logo-mini { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--oro); }
+
+  .marcador {
+    display: flex; gap: 24px; align-items: center;
+  }
+  .marcador-player {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .marcador-player .nombre { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(245,237,216,.5); }
+  .marcador-player .puntos { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--oro); line-height: 1; }
+  .marcador-player.activo .nombre { color: var(--oro2); }
+  .marcador-player.activo .puntos { text-shadow: 0 0 18px rgba(200,168,75,.6); }
+  .marcador-sep { font-size: 1.5rem; color: rgba(200,168,75,.3); }
+
+  .badge-turno {
+    font-size: .85rem; padding: 4px 12px;
+    border: 1px solid var(--oro); border-radius: 20px;
+    color: var(--oro); letter-spacing: .08em;
+    background: rgba(200,168,75,.08);
+    white-space: nowrap;
+  }
+
+  /* ─── MESA ─── */
+  #zona-rival {
+    display: flex; gap: 12px; justify-content: center; align-items: center;
+    min-height: 120px; padding: 8px;
+    background: rgba(0,0,0,.15); border-radius: 8px;
+    border: 1px solid rgba(200,168,75,.08);
+  }
+
+  #zona-central {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 10px;
+  }
+
+  .estado-apuesta {
+    display: flex; gap: 8px; align-items: center;
+  }
+
+  .badge-apuesta {
+    font-size: .8rem; padding: 3px 12px;
+    border-radius: 20px; letter-spacing: .1em; text-transform: uppercase;
+    background: rgba(139,26,26,.3); border: 1px solid rgba(200,100,100,.4); color: #e8a0a0;
+  }
+
+  .cartas-jugadas-baza {
+    display: flex; gap: 20px; justify-content: center; align-items: flex-end;
+    min-height: 90px;
+  }
+
+  .carta-baza-label { font-size: .75rem; text-align: center; color: rgba(245,237,216,.5); margin-top: 4px; }
+
+  .info-ronda {
+    font-size: .9rem; color: rgba(245,237,216,.45); letter-spacing: .06em; text-transform: uppercase;
+    font-style: italic;
+  }
+
+  #zona-yo {
+    display: flex; gap: 12px; justify-content: center; align-items: center;
+    min-height: 140px; padding: 8px;
+    background: rgba(0,0,0,.2); border-radius: 8px;
+    border: 1px solid rgba(200,168,75,.12);
+  }
+
+  /* ─── CARTAS ─── */
+  .carta {
+    width: 74px; height: 114px;
+    border-radius: 6px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+    transition: transform .18s, box-shadow .18s;
+    cursor: default;
+    flex-shrink: 0;
+  }
+
+  .carta-jugable {
+    cursor: pointer;
+    animation: cartaEntrar .3s ease both;
+  }
+  .carta-jugable:hover {
+    transform: translateY(-14px) scale(1.07);
+    box-shadow: 0 16px 32px rgba(0,0,0,.7), 0 0 20px rgba(200,168,75,.25);
+    z-index: 5;
+  }
+  .carta-jugable:active { transform: translateY(-6px) scale(1.02); }
+
+  @keyframes cartaEntrar {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .carta-frente {
+    background: #fff;
+    border: 2px solid #ddd;
+    box-shadow: 2px 4px 12px rgba(0,0,0,.6);
+  }
+  .carta-dorso {
+    background: linear-gradient(135deg, #1a3a1a 0%, #0a2010 100%);
+    border: 2px solid rgba(200,168,75,.4);
+    box-shadow: 2px 4px 12px rgba(0,0,0,.5);
+  }
+  .carta-dorso::after {
+    content: '🂠';
+    font-size: 2.8rem;
+    color: rgba(200,168,75,.3);
+  }
+  .carta-vacia {
+    background: rgba(255,255,255,.03);
+    border: 2px dashed rgba(200,168,75,.12);
+  }
+
+  .carta-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.55rem; font-weight: 900;
+    line-height: 1;
+    color: var(--rojo);
+  }
+  .carta-num.negro { color: #1a1a2e; }
+
+  .carta-palo-icon { font-size: 1.8rem; line-height: 1; }
+  .carta-palo-txt { font-size: .6rem; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-top: 2px; }
+
+  .carta-esquina { position: absolute; font-size: .6rem; color: inherit; line-height: 1; }
+  .carta-esquina.tl { top: 4px; left: 5px; font-size: .75rem; font-weight: 700; }
+  .carta-esquina.br { bottom: 4px; right: 5px; transform: rotate(180deg); font-size: .75rem; font-weight: 700; }
+
+  /* ─── CONTROLES CANTO ─── */
+  #zona-cantos {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    min-height: 44px; align-items: center;
+    padding: 6px 0;
+  }
+
+  /* ─── LOG ─── */
+  #zona-log {
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(200,168,75,.1);
+    border-radius: 6px;
+    padding: 10px 14px;
+    max-height: 140px; overflow-y: auto;
+    font-size: .88rem; line-height: 1.7;
+    color: rgba(245,237,216,.65);
+  }
+  #zona-log .log-entry { border-bottom: 1px solid rgba(255,255,255,.04); padding: 1px 0; }
+  #zona-log .log-sistema { color: var(--oro2); font-style: italic; }
+  #zona-log .log-canto   { color: #a0c8f0; }
+  #zona-log .log-error   { color: #e07070; }
+
+  /* ─── OVERLAY FIN ─── */
+  #overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.85); backdrop-filter: blur(6px);
+    z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+  }
+  #overlay.visible { display: flex; }
+  #overlay h2 { font-family: 'Playfair Display', serif; font-size: 2.8rem; color: var(--oro); }
+  #overlay p  { font-size: 1.2rem; color: var(--crema); }
+
+  /* ─── ESPERANDO RIVAL ─── */
+  .esperando {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 30px; color: rgba(245,237,216,.5); font-style: italic;
+  }
+  .esperando .puntos-espera {
+    display: flex; gap: 6px;
+  }
+  .esperando .puntos-espera span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--oro); opacity: .3;
+    animation: parpadeo 1.2s infinite;
+  }
+  .esperando .puntos-espera span:nth-child(2) { animation-delay: .4s; }
+  .esperando .puntos-espera span:nth-child(3) { animation-delay: .8s; }
+  @keyframes parpadeo { 0%,100%{opacity:.15} 50%{opacity:.9} }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(200,168,75,.3); border-radius: 2px; }
+
+  .highlight-turno { animation: pulsoTurno 1s ease 2; }
+  @keyframes pulsoTurno {
+    0%,100%{box-shadow: none}
+    50%{box-shadow: 0 0 0 3px rgba(200,168,75,.5)}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════════ PANTALLA CONEXIÓN ════════ -->
+  <div id="pantalla-conexion">
+    <div class="titulo-juego">Truco<br/><span>Argentino</span></div>
+    <p class="subtitulo">El juego de los que saben</p>
+    <div class="panel-conexion">
+      <label for="inp-host">Servidor (host:puerto)</label>
+      <input id="inp-host" type="text" value="localhost:8080" placeholder="localhost:8080"/>
+      <button class="btn" id="btn-conectar">Conectar al servidor</button>
+      <div id="status-conexion">Sin conexión</div>
+    </div>
+  </div>
+
+  <!-- ════════ PANTALLA JUEGO ════════ -->
+  <div id="pantalla-juego">
+
+    <div class="header-juego">
+      <div class="logo-mini">♠ Truco</div>
+      <div class="marcador">
+        <div class="marcador-player" id="marc-j1">
+          <span class="nombre">Jugador 1</span>
+          <span class="puntos" id="pts1">0</span>
+        </div>
+        <div class="marcador-sep">—</div>
+        <div class="marcador-player" id="marc-j2">
+          <span class="nombre">Jugador 2</span>
+          <span class="puntos" id="pts2">0</span>
+        </div>
+      </div>
+      <div class="badge-turno" id="badge-turno">Esperando...</div>
+    </div>
+
+    <!-- Cartas del rival -->
+    <div id="zona-rival">
+      <div class="esperando" id="esperando-rival">
+        <span>Esperando al segundo jugador</span>
+        <div class="puntos-espera"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <!-- Zona central -->
+    <div id="zona-central">
+      <div class="estado-apuesta" id="zona-apuesta"></div>
+      <div class="cartas-jugadas-baza" id="baza-actual"></div>
+      <div class="info-ronda" id="info-ronda"></div>
+    </div>
+
+    <!-- Cantos -->
+    <div id="zona-cantos"></div>
+
+    <!-- Tus cartas -->
+    <div id="zona-yo"></div>
+
+    <!-- Log -->
+    <div id="zona-log"></div>
+
+  </div>
+
+  <!-- Overlay fin -->
+  <div id="overlay">
+    <h2 id="overlay-titulo">Fin de partida</h2>
+    <p  id="overlay-sub"></p>
+    <button class="btn" onclick="location.reload()">Jugar de nuevo</button>
+  </div>
+
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════╗
+// ║              CLIENTE TRUCO — WEBSOCKET               ║
+// ╚══════════════════════════════════════════════════════╝
+
+const PALO_ICON = { oro:'⚜', copa:'☽', espada:'⚔', basto:'🌿' };
+const PALO_COLOR= { oro:'rojo', copa:'rojo', espada:'negro', basto:'negro' };
+
+let ws = null;
+let miJugador = null;          // 'jugador1' | 'jugador2'
+let misCartas = [];            // [{numero, palo}, ...]
+let estadoApuesta = 'nada';
+let turnoActual = null;
+let rondaActual = 1;
+let cartasBazaActual = {};     // {jugador1: carta, jugador2: carta}
+
+/* ─── CONEXIÓN ─────────────────────────────────────────── */
+document.getElementById('btn-conectar').addEventListener('click', conectar);
+document.getElementById('inp-host').addEventListener('keydown', e => e.key==='Enter' && conectar());
+
+function conectar() {
+  const host = document.getElementById('inp-host').value.trim();
+  const url  = `ws://${host}/ws`;
+  setStatus(`Conectando a ${url}…`);
+  ws = new WebSocket(url, ['truco']);
+
+  ws.onopen    = () => setStatus('Conexión establecida. Esperando asignación…', 'ok');
+  ws.onclose   = () => setStatus('Conexión cerrada.', 'err');
+  ws.onerror   = () => setStatus('Error de conexión.', 'err');
+  ws.onmessage = e  => manejarMensaje(JSON.parse(e.data));
+}
+
+function enviar(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN)
+    ws.send(JSON.stringify(obj));
+}
+
+/* ─── MENSAJES ENTRANTES ────────────────────────────────── */
+function manejarMensaje(msg) {
+  switch (msg.tipo) {
+
+    case 'asignacion':
+      miJugador = msg.jugador;
+      setStatus(`Eres ${miJugador === 'jugador1' ? 'Jugador 1 (mano)' : 'Jugador 2'}`, 'ok');
+      log(`Eres <b>${miJugador}</b>`, 'sistema');
+      break;
+
+    case 'sala_lista':
+      log('¡Ambos jugadores conectados! Comenzamos…', 'sistema');
+      mostrarPantallaJuego();
+      break;
+
+    case 'nueva_mano':
+      misCartas = msg.tus_cartas || [];
+      turnoActual = msg.turno;
+      estadoApuesta = 'nada';
+      cartasBazaActual = {};
+      rondaActual = 1;
+      actualizarPuntaje(msg.puntaje);
+      renderMesa();
+      log(`━━ Nueva mano. Tiene la mano: <b>${msg.mano}</b> ━━`, 'sistema');
+      break;
+
+    case 'carta_jugada':
+      // El rival jugó una carta (o yo mismo: server confirma)
+      cartasBazaActual[msg.jugador] = msg.carta;
+      turnoActual = msg.turno;
+      renderMesa();
+      log(`${msg.jugador} tiró una carta.`, 'sistema');
+      break;
+
+    case 'resultado_baza':
+      log(`Ronda ${msg.ronda}: ganó <b>${msg.ganador_baza}</b>`, 'sistema');
+      cartasBazaActual = {};
+      renderMesa();
+      break;
+
+    case 'nueva_ronda':
+      rondaActual = msg.ronda;
+      turnoActual = msg.turno;
+      renderMesa();
+      break;
+
+    case 'canto':
+      estadoApuesta = msg.estado_apuesta;
+      log(`${msg.jugador} cantó <b>${msg.canto}</b>`, 'canto');
+      renderCantos();
+      actualizarApuestaUI();
+      break;
+
+    case 'fin_mano':
+      log(`Mano terminada. Ganó <b>${msg.ganador}</b> (+${msg.puntos_ganados} pts)`, 'sistema');
+      actualizarPuntaje(msg.puntaje);
+      cartasBazaActual = {};
+      misCartas = [];
+      renderMesa();
+      break;
+
+    case 'fin_partida':
+      mostrarFinPartida(msg.ganador, msg.puntaje);
+      break;
+
+    case 'error':
+      log(`⚠ ${msg.mensaje}`, 'error');
+      break;
+
+    default:
+      console.log('[WS]', msg);
+  }
+}
+
+/* ─── ACCIONES DEL JUGADOR ─────────────────────────────── */
+function jugarCarta(idx) {
+  if (turnoActual !== miJugador) { log('No es tu turno.', 'error'); return; }
+  enviar({ tipo: 'jugar_carta', indice: idx + 1 });
+  // Actualizar local
+  misCartas.splice(idx, 1);
+  renderMesa();
+}
+
+function cantar(canto) {
+  enviar({ tipo: 'cantar', canto });
+  log(`Cantaste: <b>${canto}</b>`, 'canto');
+}
+
+/* ─── RENDER ────────────────────────────────────────────── */
+function renderMesa() {
+  renderCartas();
+  renderRival();
+  renderBaza();
+  renderCantos();
+  actualizarApuestaUI();
+  actualizarTurnoBadge();
+}
+
+function renderCartas() {
+  const zona = document.getElementById('zona-yo');
+  zona.innerHTML = '';
+  if (misCartas.length === 0) {
+    zona.innerHTML = '<div class="esperando"><span>Sin cartas</span></div>';
+    return;
+  }
+  misCartas.forEach((carta, idx) => {
+    const jugable = turnoActual === miJugador;
+    const el = crearCartaEl(carta, jugable, idx);
+    zona.appendChild(el);
+  });
+}
+
+function renderRival() {
+  const zona = document.getElementById('zona-rival');
+  zona.innerHTML = '';
+  const rival = miJugador === 'jugador1' ? 'jugador2' : 'jugador1';
+  // Mostrar dorsos: no sabemos cuántas le quedan, mostramos 3 al inicio
+  const n = 3;
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'carta carta-dorso';
+    zona.appendChild(d);
+  }
+}
+
+function renderBaza() {
+  const zona = document.getElementById('baza-actual');
+  zona.innerHTML = '';
+  ['jugador1','jugador2'].forEach(j => {
+    const wrap = document.createElement('div');
+    wrap.style.textAlign = 'center';
+    if (cartasBazaActual[j]) {
+      wrap.appendChild(crearCartaEl(cartasBazaActual[j], false));
+    } else {
+      const vacia = document.createElement('div');
+      vacia.className = 'carta carta-vacia';
+      wrap.appendChild(vacia);
+    }
+    const lbl = document.createElement('div');
+    lbl.className = 'carta-baza-label';
+    lbl.textContent = j === miJugador ? 'Vos' : 'Rival';
+    wrap.appendChild(lbl);
+    zona.appendChild(wrap);
+  });
+
+  document.getElementById('info-ronda').textContent = `Ronda ${rondaActual} de 3`;
+}
+
+function renderCantos() {
+  const zona = document.getElementById('zona-cantos');
+  zona.innerHTML = '';
+  const esMiTurno = turnoActual === miJugador;
+
+  const cantos = cantosDisponibles(estadoApuesta, miJugador);
+  if (!cantos.length) return;
+
+  cantos.forEach(({ label, canto, clase }) => {
+    const b = document.createElement('button');
+    b.className = `btn btn-canto ${clase||''}`;
+    b.textContent = label;
+    b.disabled = false; // los cantos pueden hacerse en cualquier momento
+    b.onclick = () => cantar(canto);
+    zona.appendChild(b);
+  });
+}
+
+function cantosDisponibles(estado, jugador) {
+  // Simplificado: detectar qué acciones son válidas según el estado
+  if (estado === 'nada') {
+    return [{ label: 'Truco', canto: 'truco' }];
+  }
+  if (typeof estado === 'object') {
+    const tipo = estado[0]; const dueno = estado[1];
+    if (tipo === 'truco_propuesto' && dueno !== jugador) {
+      return [
+        { label: 'Quiero', canto: 'quiero' },
+        { label: 'Retruco', canto: 'retruco' },
+        { label: 'No Quiero', canto: 'no', clase: 'btn-no' },
+      ];
+    }
+    if (tipo === 'truco' && dueno !== jugador) {
+      return [{ label: 'Retruco', canto: 'retruco' }];
+    }
+    if (tipo === 'retruco_propuesto' && dueno !== jugador) {
+      return [
+        { label: 'Quiero', canto: 'quiero' },
+        { label: 'Vale 4', canto: 'vale4' },
+        { label: 'No Quiero', canto: 'no', clase: 'btn-no' },
+      ];
+    }
+    if (tipo === 'retruco' && dueno !== jugador) {
+      return [{ label: 'Vale 4', canto: 'vale4' }];
+    }
+    if (tipo === 'vale4_propuesto' && dueno !== jugador) {
+      return [
+        { label: 'Quiero', canto: 'quiero' },
+        { label: 'No Quiero', canto: 'no', clase: 'btn-no' },
+      ];
+    }
+  }
+  // string form (nada / truco / retruco / vale4)
+  if (typeof estado === 'string') {
+    if (estado === 'nada') return [{ label: 'Truco', canto: 'truco' }];
+    if (estado === 'truco_propuesto') return [];
+    if (estado === 'truco') return [{ label: 'Retruco', canto: 'retruco' }];
+    if (estado === 'retruco') return [{ label: 'Vale 4', canto: 'vale4' }];
+  }
+  return [];
+}
+
+function actualizarApuestaUI() {
+  const zona = document.getElementById('zona-apuesta');
+  zona.innerHTML = '';
+  if (!estadoApuesta || estadoApuesta === 'nada') return;
+  const badge = document.createElement('div');
+  badge.className = 'badge-apuesta';
+  badge.textContent = typeof estadoApuesta === 'string' ? estadoApuesta.toUpperCase() : JSON.stringify(estadoApuesta);
+  zona.appendChild(badge);
+}
+
+function actualizarTurnoBadge() {
+  const badge = document.getElementById('badge-turno');
+  badge.textContent = turnoActual === miJugador ? '🎯 Tu turno' : '⏳ Turno del rival';
+  badge.style.borderColor = turnoActual === miJugador ? 'var(--oro)' : 'rgba(200,168,75,.3)';
+  badge.style.color = turnoActual === miJugador ? 'var(--oro2)' : 'rgba(245,237,216,.4)';
+
+  const mij = document.getElementById(`marc-${miJugador}`);
+  const riv = document.getElementById(`marc-${miJugador==='jugador1'?'j2':'j1'}`);
+  if (turnoActual === miJugador) {
+    mij.classList.add('activo'); riv.classList.remove('activo');
+  } else {
+    riv.classList.add('activo'); mij.classList.remove('activo');
+  }
+}
+
+function actualizarPuntaje(pts) {
+  if (!pts) return;
+  document.getElementById('pts1').textContent = pts.j1 ?? '0';
+  document.getElementById('pts2').textContent = pts.j2 ?? '0';
+}
+
+/* ─── CARTA ELEMENT ─────────────────────────────────────── */
+function crearCartaEl(carta, jugable, idx) {
+  const el = document.createElement('div');
+  el.className = `carta carta-frente ${jugable ? 'carta-jugable' : ''}`;
+  const color = PALO_COLOR[carta.palo] || 'negro';
+  const icon  = PALO_ICON[carta.palo]  || '?';
+  el.innerHTML = `
+    <span class="carta-esquina tl carta-num ${color}">${carta.numero}</span>
+    <div class="carta-palo-icon">${icon}</div>
+    <div class="carta-palo-txt">${carta.palo}</div>
+    <span class="carta-esquina br carta-num ${color}">${carta.numero}</span>
+  `;
+  if (jugable && idx !== undefined) {
+    el.style.animationDelay = `${idx * 0.07}s`;
+    el.addEventListener('click', () => jugarCarta(idx));
+  }
+  return el;
+}
+
+/* ─── UI HELPERS ────────────────────────────────────────── */
+function setStatus(msg, clase='') {
+  const el = document.getElementById('status-conexion');
+  el.textContent = msg;
+  el.className = clase;
+}
+
+function log(msg, tipo='') {
+  const zona = document.getElementById('zona-log');
+  const div = document.createElement('div');
+  div.className = `log-entry log-${tipo}`;
+  div.innerHTML = msg;
+  zona.prepend(div);
+}
+
+function mostrarPantallaJuego() {
+  document.getElementById('pantalla-conexion').style.display = 'none';
+  const pg = document.getElementById('pantalla-juego');
+  pg.style.display = 'flex';
+  // Ajustar nombre en marcador
+  const mij = miJugador === 'jugador1' ? 'j1' : 'j2';
+  document.getElementById(`marc-${mij}`).querySelector('.nombre').textContent = 'Vos';
+}
+
+function mostrarFinPartida(ganador, puntaje) {
+  const overlay = document.getElementById('overlay');
+  document.getElementById('overlay-titulo').textContent =
+    ganador === miJugador ? '🏆 ¡Ganaste!' : '😔 Perdiste';
+  document.getElementById('overlay-sub').textContent =
+    `Resultado final: J1 ${puntaje.j1} — J2 ${puntaje.j2}`;
+  overlay.classList.add('visible');
+}
+</script>
+</body>
+</html>
