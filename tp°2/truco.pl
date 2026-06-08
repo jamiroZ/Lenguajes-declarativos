@@ -242,13 +242,22 @@ responder_apuesta(truco(PProp), PResp, PProp, EstFin, Result) :-
     EstFin=truco(PProp),
     Result=continuar
     ;   Respuesta==retruco
-    ->  responder_apuesta(retruco(PResp), PProp, PResp, EstFin, Result)
+    ->  
+        format(
+        "DEBUG RETRUCO -> PResp=~w PProp=~w~n",
+        [PResp,PProp]
+        ),
+        enviar_evento(
+            todos,
+            canto_retruco(PResp)
+        ),
+        responder_apuesta(retruco(PResp), PProp, PResp, EstFin, Result)
     ).
 
 responder_apuesta(retruco(PProp), PResp, PProp, EstFin, Result) :-
     enviar_evento(
         todos,
-        responder_truco(PResp, [quiero,retruco,no])
+        responder_retruco(PResp, [quiero,vale4,no])
     ),
 
     obtener_accion(
@@ -262,7 +271,12 @@ responder_apuesta(retruco(PProp), PResp, PProp, EstFin, Result) :-
     ->  EstFin=retruco(PProp),
         Result=continuar
     ;   Respuesta==vale4
-    ->  responder_apuesta(vale4(PResp), PProp, PResp, EstFin, Result)
+    -> 
+        enviar_evento(
+            todos,
+            canto_vale4(PResp)
+        ),
+        responder_apuesta(vale4(PResp), PProp, PResp, EstFin, Result)
     ).
 
 responder_apuesta(vale4(PProp), PResp, PProp, EstFin, Result) :-

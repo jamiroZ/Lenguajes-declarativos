@@ -208,10 +208,9 @@ enviar_cartas(Jugador, Cartas) :-
 % ==========================================
 
 enviar_ws(WS, Evento) :-
-    format('ENVIANDO ~w~n', [Evento]),
 
     term_string(Evento, Texto),
-
+ 
     Dict = _{
         tipo:evento,
         mensaje:Texto

@@ -81,8 +81,8 @@ mostrar_cartas_num([C|R], N) :-
 manejar_evento(Dict, WS, Jugador) :-
 
     Evento = Dict.mensaje,
-
     catch(
+       
         term_string(Termino, Evento),
         E,
         (
@@ -92,18 +92,14 @@ manejar_evento(Dict, WS, Jugador) :-
         )
     ),
 
-    write('TERMINO = '),
-    writeln(Termino),
-
     mostrar_evento(Termino),
 
     (
         es_mi_turno(Evento, Jugador)
-        ->
-        writeln('ES MI TURNO'),
+        -> 
         responder(WS)
         ;
-        writeln('NO ES MI TURNO')
+        true
     ).
 
 % ==========================================
@@ -151,6 +147,8 @@ es_mi_turno(Evento, Jugador) :-
         Termino = turno_vale4(Jugador)
         ;
         Termino = responder_truco(Jugador,_)
+        ;
+        Termino = responder_retruco(Jugador,_)
         ;
         Termino = responder_vale4(Jugador,_)
     ).
