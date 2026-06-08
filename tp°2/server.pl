@@ -29,15 +29,13 @@ websocket_handler(Request) :-
     ).
 
 aceptar_websocket(WS) :-
-
     ws_receive(WS, Mensaje, []),
-
     atom_json_dict(Mensaje.data, Dict, []),
-
-    Jugador = Dict.jugador,
-
+    atom_string(
+        Jugador,
+        Dict.jugador
+    ),
     message_queue_create(Cola),
-
     assertz(cliente(Jugador, WS)),
     assertz(cola_jugador(Jugador, Cola)),
 
@@ -69,19 +67,27 @@ esperar :-
 escuchar_jugador(Jugador, WS, Cola) :-
 
     repeat,
-
     ws_receive(WS, Mensaje, []),
-
+    format(
+        "RECIBI DE ~w: ~w~n", 
+        [Jugador,Mensaje]
+    ),
     (
         Mensaje.opcode == close
         ->
-        format("Desconectado: ~w~n", [Jugador]),
+        format(
+            "Desconectado: ~w~n", 
+            [Jugador]
+        ),
         !
 
         ;
 
         atom_json_dict(Mensaje.data, Dict, []),
-
+        format(
+            'JSON DE ~w: ~w~n',
+            [Jugador, Dict]
+        ),
         (
             get_dict(accion, Dict, Accion)
             ->
@@ -178,30 +184,42 @@ enviar_evento(Jugador, Evento) :-
 
 enviar_cartas(Jugador, Cartas) :-
 
+    format("MANDANDO CARTAS A ~w~n", [Jugador]),
+
     cliente(Jugador, WS),
 
     term_string(Cartas, Texto),
 
+    Dict = _{
+        tipo:"cartas",
+        cartas:Texto
+    },
+
+    writeln(Dict),
+
     ws_send(
         WS,
-        json(_{
-            tipo: cartas,
-            cartas: Texto
-        })
-    ).
+        json(Dict)
+    ),
 
+    writeln('CARTAS ENVIADAS').
 % ==========================================
 % ENVIO GENERICO
 % ==========================================
 
 enviar_ws(WS, Evento) :-
+    format('ENVIANDO ~w~n', [Evento]),
 
     term_string(Evento, Texto),
 
+    Dict = _{
+        tipo:evento,
+        mensaje:Texto
+    },
+
     ws_send(
         WS,
-        json(_{
-            tipo: evento,
-            mensaje: Texto
-        })
-    ).
+        json(Dict)
+    ),
+
+    writeln('ENVIADO OK').

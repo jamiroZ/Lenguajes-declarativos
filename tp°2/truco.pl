@@ -78,10 +78,8 @@ jugar(Pts1, Pts2, ManoActual) :-
         todos,
         estado_mano(ManoActual, Pts1, Pts2)
     ),
-    writeln("MANDANDO EVENTOS"),
     enviar_cartas(jugador1, CartasJ1),
-    enviar_cartas(jugador2, CartasJ2),
-    writeln("ARRANCA MANO"),
+    enviar_cartas(jugador2, CartasJ2), % SE ROMPE ACA (FALTA INICIAR LA MANO)
     % Iniciar la secuencia de la mano (3 rondas max)
     (   ManoActual==jugador1
     ->  mano_logica(jugador1, jugador2, CartasJ1, CartasJ2, nada, GanadorMano, EstadoFinalApuesta)
@@ -94,6 +92,7 @@ jugar(Pts1, Pts2, ManoActual) :-
         ganador_mano(GanadorMano, PuntosGanados)
     ),
     siguiente_mano(ManoActual, ManoSig),
+    writeln('SALIO DE MANO_LOGICA'),
     jugar(NuevosPts1, NuevosPts2, ManoSig).
 
 siguiente_mano(jugador1, jugador2).
@@ -124,6 +123,10 @@ fase_apuesta(nada, PTurno, PRival, EstFin, Result) :-
     ;
     Canto == truco
     ->
+    enviar_evento(
+        todos,
+        canto_truco(PTurno)
+    ),
     responder_apuesta(
         truco(PTurno),
         PRival,
@@ -155,6 +158,10 @@ fase_apuesta(truco(Dueno), PTurno, PRival, EstFin, Result) :-
         ;
         Canto == retruco
         ->
+        enviar_evento(
+            todos,
+            canto_retruco(PTurno)
+        ),
         responder_apuesta(
             retruco(PTurno),
             PRival,
@@ -188,6 +195,10 @@ fase_apuesta(retruco(Dueno), PTurno, PRival, EstFin, Result) :-
 
     Canto == vale4
     ->
+    enviar_evento(
+        todos,
+        canto_vale4(PTurno)
+    ),
     responder_apuesta(
         vale4(PTurno),
         PRival,
@@ -214,11 +225,22 @@ responder_apuesta(truco(PProp), PResp, PProp, EstFin, Result) :-
         Respuesta
     ),
     (   Respuesta==no
-    ->  EstFin=nada,
+    ->  
+        enviar_evento(
+            todos,
+            no_quiero(PResp)
+        ),
+        EstFin=nada,
         Result=fin(PProp)
     ;   Respuesta==quiero
-    ->  EstFin=truco(PProp),
-        Result=continuar
+    
+    -> 
+    enviar_evento(
+        todos,
+        acepto_truco(PResp)
+    ), 
+    EstFin=truco(PProp),
+    Result=continuar
     ;   Respuesta==retruco
     ->  responder_apuesta(retruco(PResp), PProp, PResp, EstFin, Result)
     ).
@@ -421,6 +443,12 @@ pedir_carta(Jugador, Cartas, CartaSeleccionada, CartasRestantes, Abandono) :-
             Cartas,
             CartasRestantes
         ),
+
+        enviar_evento(
+            todos,
+            carta_jugada(Jugador,CartaSeleccionada)
+        ),
+
         Abandono = false
         ;
         Abandono = true,
