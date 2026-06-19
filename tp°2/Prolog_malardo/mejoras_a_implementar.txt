@@ -1,0 +1,18 @@
+MEJORAS A IMPLEMENTAR
+=====================
+
+1. Validar que no haya dos conexiones con el mismo nombre de jugador
+   - Si alguien intenta conectarse como "jugador1" y ya hay uno conectado,
+     rechazar la conexión o pedir otro nombre.
+
+2. Manejo de desconexiones
+   - Si un jugador se desconecta (cierra el navegador / terminal / pierde conexión),
+     la partida no debe buguearse.
+   - El otro jugador debe volver al estado de espera, y la partida reiniciarse
+     automáticamente cuando el jugador desconectado vuelva a conectarse.
+
+3. Estado de la partida
+   - Al reconectarse, el estado del juego debe estar limpio (sin residuos de la
+     partida anterior).
+   - Limpiar recursos: eliminar los hechos dinámicos (cliente, cola_jugador,
+     partida_iniciada) cuando un jugador se desconecta.
