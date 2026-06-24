@@ -1,0 +1,18 @@
+- levantar servidor:
+    cd servidor
+    swipl server.pl
+    server.
+
+- levantar a jugador:
+    terminal:
+      cd clientes/terminal
+      swipl jugador_terminal.pl
+      conectar(jugador1).
+    navegador:
+      cd clientes/webAssembly
+      npm run dev
+
+- levantar ia:
+    cd clientes/ia
+    swipl jugador_ia.pl
+    iniciar_ia(jugador2).
