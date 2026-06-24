@@ -1,7 +1,0 @@
-levantar servidor:
-swipl server.pl
-server.
-
-levantar al jugador:
-swipl jugador_terminal.pl
-conectar(jugador1).

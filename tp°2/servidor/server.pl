@@ -1,8 +1,9 @@
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/websocket)).
-:- use_module(library(http/json)).
-:- consult('truco.pl').
+:- use_module(library(json)).
+:- consult('../motor/truco.pl').
+
 
 :- dynamic cliente/2.
 :- dynamic cola_jugador/2.
@@ -128,7 +129,7 @@ verificar_inicio :-
     writeln("INICIANDO PARTIDA"),
 
     thread_create(
-        iniciar,
+        catch(iniciar, Error, format("ERROR EN EL MOTOR DE TRUCO: ~w~n", [Error])),
         _,
         []).
 
@@ -141,7 +142,7 @@ verificar_inicio.
 obtener_accion(Jugador, Accion) :-
 
     format("Esperando accion de ~w~n", [Jugador]),
-
+     
     cola_jugador(Jugador, Cola),
 
     thread_get_message(

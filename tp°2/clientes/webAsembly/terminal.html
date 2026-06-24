@@ -112,7 +112,8 @@ function conectar() {
   if (!name) { log('<span class="error">ERROR: ingresá un nombre de jugador</span>', 'error'); return; }
   jugador = name;
 
-  ws = new WebSocket('ws://localhost:8080/ws');
+  const host = window.location.hostname;
+  ws = new WebSocket(`ws://${host}:8080/ws`);
 
   ws.onopen = () => {
     log(`Conectado como <span class="highlight">${jugador}</span>`, 'msg');

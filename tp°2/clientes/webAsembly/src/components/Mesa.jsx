@@ -14,25 +14,23 @@ export default function Mesa({ cartasJugadas, bazaWinners, jugador }) {
     bazas.push(cartasJugadas.slice(i, i + 2));
   }
 
-  function renderCell(cartas, player, isRival) {
+  const mostradas = bazas.slice(0, 3);
+  const vacias = 3 - mostradas.length;
+
+  function cellCont(cartas, player, isRival) {
     const carta = cartas.find(c => c.jugador === player);
-    if (!carta) return <div className="mg-cell" />;
+    if (!carta) return null;
     const bi = cartasJugadas.indexOf(carta);
     const bazaIdx = Math.floor(bi / 2);
     const ganador = bazaWinners[bazaIdx];
     const perdio = ganador && ganador !== carta.jugador;
     const cls = `${perdio ? 'perdedor' : ''} ${isRival ? 'cj-dorso' : ''} anim-card`.trim();
     return (
-      <div className="mg-cell">
-        <div className={isRival ? 'anim-rival-wrap' : 'anim-player-wrap'}>
-          <Card src={cartaASrc(carta.carta)} alt={carta.carta} className={cls} />
-        </div>
+      <div className={isRival ? 'anim-rival-wrap' : 'anim-player-wrap'}>
+        <Card src={cartaASrc(carta.carta)} alt={carta.carta} className={cls} />
       </div>
     );
   }
-
-  const mostradas = bazas.slice(0, 3);
-  const vacias = 3 - mostradas.length;
 
   return (
     <div className="mesa-grid">
@@ -46,13 +44,16 @@ export default function Mesa({ cartasJugadas, bazaWinners, jugador }) {
         <span className="mg-row-label">Rival</span>
         {mostradas.map((b, i) => {
           const rival = b.find(c => c.jugador !== jugador)?.jugador || '';
-          return renderCell(b, rival, true);
+          return <div key={`r${i}`} className="mg-cell">{cellCont(b, rival, true)}</div>;
         })}
         {Array.from({length: vacias}, (_, i) => <div key={`er${i}`} className="mg-cell" />)}
       </div>
       <div className="mg-row">
         <span className="mg-row-label">Yo</span>
-        {mostradas.map((b, i) => renderCell(b, jugador, false))}
+        {mostradas.map((b, i) => {
+          const yo = b.find(c => c.jugador === jugador)?.jugador || jugador;
+          return <div key={`y${i}`} className="mg-cell">{cellCont(b, jugador, false)}</div>;
+        })}
         {Array.from({length: vacias}, (_, i) => <div key={`ey${i}`} className="mg-cell" />)}
       </div>
     </div>
