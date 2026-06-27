@@ -1,10 +1,6 @@
 ﻿% ====================================================================
 % truco2.pl - TRUCO ARGENTINO CON ESTADOS Y DCG
 % ====================================================================
-% Representa la partida con el termino estado/5 y encadena las
-% transiciones mediante reglas DCG (-->), leyendo el estado con
-% estado/3 y escribiendolo con nuevo_estado/3.
-% ====================================================================
 :- use_module(library(random)).
 :- use_module(library(lists)).
 :- multifile obtener_accion/2.
@@ -29,20 +25,18 @@ crear_mazo(M):-findall(carta(N,P),(numero(N),palo(P)),M).
 repartir(M,C1,C2):-random_permutation(M,[A,B,C,D,E,F|_]),C1=[A,B,C],C2=[D,E,F].
 
 % ====================================================================
-% 2. ESTADO
-% ====================================================================
 % estado(Puntos, Mano, Cartas, Apuesta, Bazas)
-%   Puntos = puntos(P1,P2)
+%   Puntos = puntos(P1,P2) puntaje de cada jugador
 %   Mano   = jugador que es mano
-%   Cartas = cartas(C1,C2)
+%   Cartas = cartas(C1,C2) cartas de cada jugador
 %   Apuesta = nada|truco(Q)|retruco(Q)|vale4(Q)
-%   Bazas  = [G1,G2,G3]  ganadores baza 1,2,3
+%   Bazas  = [G1,G2,G3]  ganadores baza 1,2,3 
 
 % ====================================================================
-% 3. PREDICADOS DCG: leer/escribir estado
+% 3. PREDICADOS DCG
 % ====================================================================
-estado(S,[S|T],T).
-nuevo_estado(S,_,[S]).
+estado(S,[S|T],T). % lee el estado actual 
+nuevo_estado(S,_,[S]).% escribe un nuevo estado 
 
 % ====================================================================
 % 4. ENTRADA
@@ -76,7 +70,7 @@ fase_reparto(J1,J2)-->
     nuevo_estado(estado(puntos(P1,P2),M,cartas(C1,C2),A,[])).
 
 % ====================================================================
-% 7. MANO (predicado regular, transforma estado)
+% 7. MANO 
 % ====================================================================
 jugar_mano(estado(puntos(P1,P2),M,cartas(C1,C2),_,_),J1,J2,
            estado(puntos(NP1,NP2),M1,cartas(C1,C2),nada,[])):-
@@ -88,7 +82,7 @@ jugar_mano(estado(puntos(P1,P2),M,cartas(C1,C2),_,_),J1,J2,
     cambiar_mano(M,J1,J2,M1).
 
 % ====================================================================
-% 8. SECUENCIA DE BAZAS (predicado regular)
+% 8. SECUENCIA DE BAZAS 
 % ====================================================================
 % 2 bazas: mismo ganador no-parda -> mano terminada
 jugar_bazas(_,_,_,_,A,[G1,G2],_,G,A,_,_):-G1\=parda,G1==G2,!,G=G1.
@@ -107,7 +101,7 @@ jugar_bazas(PT,PR,CT,CR,A,Bs,Mano,G,Aout,CTf,CRf):-
     ).
 
 % ====================================================================
-% 9. BAZA INDIVIDUAL (predicado regular)
+% 9. BAZA INDIVIDUAL 
 % ====================================================================
 jugar_baza(PT,PR,CT,CR,EA,EF,CT1,CR1,R):-
     enviar_evento(todos,estado_apuesta(EA)),
@@ -185,7 +179,7 @@ responder_apuesta(vale4(P),PResp,P,EF,R):-
     ).
 
 % ====================================================================
-% 11. AUXILIARES
+% 11. OPERACIONES DE PUNTOS Y GANADORES
 % ====================================================================
 calcular_puntos(nada,1). calcular_puntos(truco(_),2).
 calcular_puntos(retruco(_),3). calcular_puntos(vale4(_),4).

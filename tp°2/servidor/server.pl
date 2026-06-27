@@ -2,7 +2,7 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/websocket)).
 :- use_module(library(json)).
-:- consult('../motor/truco.pl').
+:- consult('../motor/truco2.pl').
 
 :- dynamic cliente/2.
 :- dynamic cola_jugador/2.
