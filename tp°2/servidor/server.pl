@@ -4,7 +4,6 @@
 :- use_module(library(json)).
 :- consult('../motor/truco.pl').
 
-
 :- dynamic cliente/2.
 :- dynamic cola_jugador/2.
 :- dynamic partida_iniciada/0.
@@ -107,119 +106,120 @@ escuchar_jugador(Jugador, WS, Cola) :-
         fail
     ).
 
-% ==========================================
-% INICIAR PARTIDA
-% ==========================================
+    % ==========================================
+    % INICIAR PARTIDA
+    % ==========================================
 
-verificar_inicio :-
+    verificar_inicio :-
 
-    partida_iniciada,
-    !.
+        partida_iniciada,
+        !.
+    
+    verificar_inicio :-
 
-verificar_inicio :-
+        findall(J, cliente(J,_), Jugadores),
 
-    findall(J, cliente(J,_), Lista),
+        length(Jugadores, Cant),
+        Cant >= 2,
 
-    length(Lista, Cant),
+        Jugadores = [J1,J2|_],
 
-    Cant >= 2,
+        assertz(partida_iniciada),
 
-    assertz(partida_iniciada),
+        writeln("INICIANDO PARTIDA"),
 
-    writeln("INICIANDO PARTIDA"),
+        thread_create(
+            catch(
+                iniciar(J1, J2),
+                Error,
+                format("ERROR EN EL MOTOR DE TRUCO: ~w~n", [Error])
+            ),
+            _,
+            []
+        ).
 
-    thread_create(
-        catch(iniciar, Error, format("ERROR EN EL MOTOR DE TRUCO: ~w~n", [Error])),
-        _,
-        []).
+    verificar_inicio.
 
-verificar_inicio.
+    % ==========================================
+    % MOTOR
+    % ==========================================
 
-% ==========================================
-% MOTOR
-% ==========================================
+    obtener_accion(Jugador, Accion) :-
 
-obtener_accion(Jugador, Accion) :-
+        format("Esperando accion de ~w~n", [Jugador]),
+        
+        cola_jugador(Jugador, Cola),
 
-    format("Esperando accion de ~w~n", [Jugador]),
-     
-    cola_jugador(Jugador, Cola),
+        thread_get_message(
+            Cola,
+            accion(Valor)
+        ),
 
-    thread_get_message(
-        Cola,
-        accion(Valor)
-    ),
+        format("Recibido de ~w: ~w~n", [Jugador, Valor]),
+        
+        ( number(Valor)
+            -> Accion = Valor
+            ; atom_string(Accion, Valor)
+        ).
 
-    format("Recibido de ~w: ~w~n", [Jugador, Valor]),
+    % ==========================================
+    % EVENTOS
+    % ==========================================
 
-    (
-        number(Valor)
-        ->
-        Accion = Valor
+    enviar_evento(todos, Evento) :-
 
-        ;
+        forall(
+            cliente(_, WS),
+            enviar_ws(WS, Evento)
+        ).
 
-        atom_string(Accion, Valor)
-    ).
+    enviar_evento(Jugador, Evento) :-
 
-% ==========================================
-% EVENTOS
-% ==========================================
+        cliente(Jugador, WS),
 
-enviar_evento(todos, Evento) :-
+        enviar_ws(WS, Evento).
 
-    forall(
-        cliente(_, WS),
-        enviar_ws(WS, Evento)
-    ).
+    % ==========================================
+    % CARTAS
+    % ==========================================
 
-enviar_evento(Jugador, Evento) :-
+    enviar_cartas(Jugador, Cartas) :-
 
-    cliente(Jugador, WS),
+        format("MANDANDO CARTAS A ~w~n", [Jugador]),
 
-    enviar_ws(WS, Evento).
+        cliente(Jugador, WS),
 
-% ==========================================
-% CARTAS
-% ==========================================
+        term_string(Cartas, Texto),
 
-enviar_cartas(Jugador, Cartas) :-
+        Dict = _{
+            tipo:"cartas",
+            cartas:Texto
+        },
 
-    format("MANDANDO CARTAS A ~w~n", [Jugador]),
+        writeln(Dict),
 
-    cliente(Jugador, WS),
+        ws_send(
+            WS,
+            json(Dict)
+        ),
 
-    term_string(Cartas, Texto),
+        writeln('CARTAS ENVIADAS').
+    % ==========================================
+    % ENVIO GENERICO
+    % ==========================================
 
-    Dict = _{
-        tipo:"cartas",
-        cartas:Texto
-    },
+    enviar_ws(WS, Evento) :-
 
-    writeln(Dict),
+        term_string(Evento, Texto),
+    
+        Dict = _{
+            tipo:evento,
+            mensaje:Texto
+        },
 
-    ws_send(
-        WS,
-        json(Dict)
-    ),
+        ws_send(
+            WS,
+            json(Dict)
+        ),
 
-    writeln('CARTAS ENVIADAS').
-% ==========================================
-% ENVIO GENERICO
-% ==========================================
-
-enviar_ws(WS, Evento) :-
-
-    term_string(Evento, Texto),
- 
-    Dict = _{
-        tipo:evento,
-        mensaje:Texto
-    },
-
-    ws_send(
-        WS,
-        json(Dict)
-    ),
-
-    writeln('ENVIADO OK').
+        writeln('ENVIADO OK').

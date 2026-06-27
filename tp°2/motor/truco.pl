@@ -45,23 +45,29 @@ repartir(Mazo, CartasJ1, CartasJ2) :-
     CartasJ2 = [C4,C5,C6].
 
 % --- 3. BUCLE PRINCIPAL DEL JUEGO ---
-iniciar :-
+iniciar(J1,J2) :-
     writeln("ARRANCO iniciar"),
     enviar_evento(
         todos,
         inicio_partida
     ),
     writeln("ANTES DE jugar"),
-    jugar(0, 0, jugador1).
+    jugar(
+        0,
+        0,
+        J1,
+        J1,
+        J2
+    ).
 
-jugar(Pts1, Pts2, _) :-
+jugar(Pts1, Pts2, _, J1, J2) :-
     (   Pts1>=15
     ;   Pts2>=15
     ),
     !,
     (   Pts1 >= 15
-    ->  GanadorFinal = jugador1
-    ;   GanadorFinal = jugador2
+    ->  GanadorFinal = J1
+    ;   GanadorFinal = J2
     ),
     enviar_evento(
         todos,
@@ -69,7 +75,7 @@ jugar(Pts1, Pts2, _) :-
     ).
 
 
-jugar(Pts1, Pts2, ManoActual) :-
+jugar(Pts1, Pts2, ManoActual, J1, J2) :-
     format("Entrando a jugar/3~n", []),
     crear_mazo(Mazo),
     repartir(Mazo, CartasJ1, CartasJ2),
@@ -78,30 +84,35 @@ jugar(Pts1, Pts2, ManoActual) :-
         todos,
         estado_mano(ManoActual, Pts1, Pts2)
     ),
-    enviar_cartas(jugador1, CartasJ1),
-    enviar_cartas(jugador2, CartasJ2), % SE ROMPE ACA (FALTA INICIAR LA MANO)
+    enviar_cartas(J1, CartasJ1),
+    enviar_cartas(J2, CartasJ2), % SE ROMPE ACA (FALTA INICIAR LA MANO)
     % Iniciar la secuencia de la mano (3 rondas max)
-    (   ManoActual==jugador1
-    ->  mano_logica(jugador1, jugador2, CartasJ1, CartasJ2, nada, GanadorMano, EstadoFinalApuesta)
-    ;   mano_logica(jugador2, jugador1, CartasJ2, CartasJ1, nada, GanadorMano, EstadoFinalApuesta)
+    (   ManoActual==J1
+    ->  mano_logica(J1, J2, CartasJ1, CartasJ2, nada, GanadorMano, EstadoFinalApuesta)
+    ;   mano_logica(J2, J1, CartasJ2, CartasJ1, nada, GanadorMano, EstadoFinalApuesta)
     ),
     calcular_puntos(EstadoFinalApuesta, PuntosGanados),
-    sumar_puntos(GanadorMano, PuntosGanados, Pts1, Pts2, NuevosPts1, NuevosPts2),
+    sumar_puntos(GanadorMano, J1, J2, PuntosGanados, Pts1, Pts2, NuevosPts1, NuevosPts2),
     enviar_evento(
         todos,
         ganador_mano(GanadorMano, PuntosGanados)
     ),
-    siguiente_mano(ManoActual, ManoSig),
+    siguiente_mano(ManoActual, J1, J2, ManoSig),
     writeln('SALIO DE MANO_LOGICA'),
-    jugar(NuevosPts1, NuevosPts2, ManoSig).
+    jugar(NuevosPts1, NuevosPts2, ManoSig, J1, J2).
 
-siguiente_mano(jugador1, jugador2).
-siguiente_mano(jugador2, jugador1).
+siguiente_mano(Actual, J1, J2, Siguiente) :-
+    ( Actual == J1
+    -> Siguiente = J2
+    ;  Siguiente = J1
+    ).
 
-sumar_puntos(jugador1, Puntos, P1, P2, NP1, P2) :-
-    NP1 is P1+Puntos.
-sumar_puntos(jugador2, Puntos, P1, P2, P1, NP2) :-
-    NP2 is P2+Puntos.
+sumar_puntos(Ganador, J1, _, Puntos, P1, P2, NP1, P2) :-
+    Ganador == J1,
+    NP1 is P1 + Puntos.
+sumar_puntos(Ganador, _, J2, Puntos, P1, P2, P1, NP2) :-
+    Ganador == J2,
+    NP2 is P2 + Puntos.
 sumar_puntos(empate, _, P1, P2, P1, P2).
 
 % --- 4. MOTOR DE APUESTAS ---
@@ -429,45 +440,45 @@ jugar_baza(PTurno, PRival, CartasT, CartasR, EstadoIn, EstadoFin, RestantesT, Re
     ).
 
 pedir_carta(Jugador, Cartas, CartaSeleccionada, CartasRestantes, Abandono) :-
-    enviar_evento(
-        todos,
-        turno_carta(Jugador)
-    ),
-    enviar_cartas(
-        Jugador,
-        Cartas
-    ),
-    obtener_accion(
-        Jugador,
-        Input
-    ),
-    (
-        Input == no
-        ->
-        Abandono = true,
+
+    enviar_evento(todos, turno_carta(Jugador)),
+    enviar_cartas(Jugador, Cartas),
+    
+    obtener_accion(Jugador, Raw),
+    normalize_input(Raw, Input),
+
+    format("RAW ACCION ~w => ~w~n", [Jugador, Input]),    
+    (   Input == no
+    ->  Abandono = true,
         CartaSeleccionada = nula,
         CartasRestantes = Cartas
 
-        ;
-        integer(Input),
-        nth1(Input, Cartas, CartaSeleccionada)
-        ->
-        select(
-            CartaSeleccionada,
-            Cartas,
-            CartasRestantes
-        ),
-
-        enviar_evento(
-            todos,
-            carta_jugada(Jugador,CartaSeleccionada)
-        ),
-
+    ;   number(Input)
+    ->  nth1(Input, Cartas, CartaSeleccionada),
+        select(CartaSeleccionada, Cartas, CartasRestantes),
+        enviar_evento(todos, carta_jugada(Jugador, CartaSeleccionada)),
         Abandono = false
-        ;
+
+    ;   atom_number(Input, I)
+    ->  nth1(I, Cartas, CartaSeleccionada),
+        select(CartaSeleccionada, Cartas, CartasRestantes),
+        enviar_evento(todos, carta_jugada(Jugador, CartaSeleccionada)),
+        Abandono = false
+
+    ;   % fallback seguro
         Abandono = true,
         CartaSeleccionada = nula,
         CartasRestantes = Cartas
+    ).
+
+normalize_input(X, N) :-
+    (   number(X)
+    ->  N = X
+    ;   atom(X)
+    ->  (atom_number(X, N) -> true ; N = X)
+    ;   string(X)
+    ->  (number_string(N, X) -> true ; N = X)
+    ;   N = X
     ).
 
 evaluar_tirada(Carta1, Carta2, P1, P2, Ganador) :-
